@@ -228,6 +228,7 @@ function sleep(ms: number): Promise<void> {
  * The AssuanClient class is a helper client for Assuan Protocol.
  */
 class AssuanClient {
+    #console: Console
     #socket: net.Socket
 
     #responseLines: Buffer[] = []
@@ -241,9 +242,12 @@ class AssuanClient {
      *
      * @remarks User should wait initialize() to complete before sending any command.
      *
+     * @param console - An object which implement Console interface for debug message.
      * @param socketPath - The file path to GnuPG unix socket.
      */
-    constructor(socketPath: string) {
+    constructor(console: Console, socketPath: string) {
+        this.#console = console
+
         this.#socket = net.createConnection(socketPath, () => {
             this.#isConnected = true
         })
@@ -252,7 +256,7 @@ class AssuanClient {
             const lines = splitLines(data)
             for (const line of lines) {
                 this.#responseLines.push(line)
-                console.debug('Recv:', line.toString('utf8'))
+                this.#console.debug('Recv:', line.toString('utf8'))
             }
         })
 
@@ -300,7 +304,7 @@ class AssuanClient {
         this.#checkError()
 
         const line = request.toBytes()
-        console.debug('Send:', line.toString('utf8'))
+        this.#console.debug('Send:', line.toString('utf8'))
         await this.#handleSend(Buffer.concat([line, Buffer.from('\n', 'utf8')]))
     }
 
